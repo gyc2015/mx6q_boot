@@ -52,7 +52,7 @@ depend:
 clean:
 	@find $(OBJTREE) -type f \
 		\( -name 'core' -o -name '*.bak' -o -name '*~' \
-		-o -name '*.o'	-o -name '*.a' -o -name '*.exe'	\) -print \
+		-o -name '*.o'	-o -name '*.a' -o -name '*.exe' -o -name '*.s'	\) -print \
 		| xargs rm -f
 	@find $(OBJTREE) -type f \( -name .depend \
 		-o -name '*.srec' -o -name '*.bin' -o -name u-boot.img \) \
