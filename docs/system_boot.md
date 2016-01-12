@@ -33,17 +33,7 @@ Serial Downloader提供了一种通过USB接口下载镜像到芯片的功能.�
 ROM设置将配置WDOG1的超时阈值为90秒,并不断地查询USB链接情况. 若在USB OTG1上没有检测到链接并且看门狗
 溢出,芯片将重启. 需要注意的是,下载的镜像必须持续地喂狗.
 
-### USB
-
-ROM用USB OTG端口作为boot的下载端口.其余的USB端口都不能作此用.链接后被设置为一个USB HID类的设备.
-有4种HID报文被用来支持串行下载协议(Serial Download Protocol, SDP).
-
-| Report ID(first byte) | Transfer Endpoint | Direction      | Length   | Description |
-|:---------------------:|-------------------|----------------|----------|-------------|
-| 1                     | control OUT       | Host to device | 17 Bytes | SDP command from host to device |
-| 2                     | control OUT       | Host to device | Up to 1025 bytes | Data associated with report 1 SDP command |
-| 3                     | interrupt         | Device to host | 5 bytes  | HAB security configuration. Device sends 0x12343412 in closed mode and 0x56787856 in open mode. |
-| 4                     | interrupt         | Device to host | Up to 65 bytes | Data in response to SDP command in report 1 |
+* [串行下载协议(Serial Download Protocol, SDP)](./serial_download_protocol)
 
 USB的VID/PID和Strings如下:
 
@@ -55,39 +45,6 @@ USB的VID/PID和Strings如下:
 | string Descriptor2 (product)      | S Blank<br>ARIK<br>SE Blank<br>ARIK<br>NS Blank<br>ARIK |
 | string Descriptor4                | Freescale Flash                |
 | string Descriptor5                | Freescale Flash                |
-
-### 串行下载协议(Serial Download Protocol, SDP)
-
-host通过HID Report 1向设备发送16字节的SDP命令,支持6种命令:
-
-* 0x0101 READ_REGISTER
-* 0x0202 WRITE_REGISTER
-* 0x0404 WRITE_FILE
-* 0x0505 ERROR_STATUS
-* 0x0A0A DCD_WRITE
-* 0x0B0B JUMP_ADDRESS
- 
-命令结构如下:
-
-| Byte Offset | Size | Name         | Description |
-|-------------|------|--------------|-------------|
-| 0           | 2    | COMMAND TYPE | i.MX6 Quad ROM支持6种命令 |
-| 2           | 4    | ADDRESS      | 适用于除了ERROR_STATUS命令外的5中命令 |
-| 6           | 1    | FORMAT       | 数据格式,只对READ_REGISTER和WRITE_REGISTER命令有效<br> 0x8: 8-bit<br>  0x10: 16-bit<br>  0x20: 32-bit |
-| 7           | 4    | DATA COUNT   | 读写数据大小<br>只对WRITE_FILE, READ_REGISTER, WRITE_REGISTER和DCD_WRITE有效<br>对于WRITE_FILE和DCD_WRITE命令DATA COUNT指字节数 |
-| 11          | 4    | DATA         | 写数据,只对WRITE_REGISTER有效 |
-| 15          | 1    | RESERVED     | 保留 |
-
-#### READ_REGISTER
-
-READ_REGISTER的通信过程包括三个部分:
-Report 1. 命令
-Report 3. 安全设置
-Report 4. 响应
-
-
-
-
 
 ## Image Vector Table, IVT
 
