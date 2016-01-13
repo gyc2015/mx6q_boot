@@ -201,6 +201,17 @@ export	TEXT_BASE PLATFORM_CPPFLAGS PLATFORM_RELFLAGS CPPFLAGS CFLAGS AFLAGS
 
 #########################################################################
 
+CSRCS := $(wildcard *.c)
+COBJS := $(patsubst %.c, %.o,$(notdir ${CSRCS}))
+
+SSRCS := $(wildcard *.S)
+SOBJS := $(patsubst %.S, %.o,$(notdir ${SSRCS}))
+
+SRCS  := $(SOBJS:.o=.S) $(COBJS:.o=.c)
+COBJS := $(addprefix $(obj),$(COBJS))
+SOBJS := $(addprefix $(obj),$(SOBJS))
+
+
 # Allow boards to use custom optimize flags on a per dir/file basis
 BCURDIR := $(notdir $(CURDIR))
 $(obj)%.s:	%.S

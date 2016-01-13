@@ -42,10 +42,8 @@ LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
 all: $(LIBBOARD)
 	echo "LIBBOARD =" ${LIBBOARD}
 
-
 $(LIBBOARD):depend
 	$(MAKE) -C $(dir $(subst $(obj),,$@))
-	mv $(dir $(subst $(obj),,$@))/flash_header.s .
 
 depend:
 
@@ -55,7 +53,7 @@ clean:
 		-o -name '*.o'	-o -name '*.a' -o -name '*.exe' -o -name '*.s'	\) -print \
 		| xargs rm -f
 	@find $(OBJTREE) -type f \( -name .depend \
-		-o -name '*.srec' -o -name '*.bin' -o -name u-boot.img \) \
+		-o -name '*.srec' -o -name '*.bin' -o -name usb_downloader \) \
 		-print0 \
 		| xargs -0 rm -f
 

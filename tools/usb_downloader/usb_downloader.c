@@ -198,14 +198,14 @@ int check_error_status(struct sdp_dev *dev) {
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 /*
- * read_memory - 读SDP设备
+ * read_register - 读SDP设备
  *
  * @dev: SDP设备
  * @addr: SDP设备起始地址
  * @dest: 目标地址
  * @cnt: 字节数
  */
-int read_memory(struct sdp_dev *dev, unsigned addr, unsigned char *dest, unsigned cnt) {
+int read_register(struct sdp_dev *dev, unsigned addr, unsigned char *dest, unsigned cnt) {
     struct sdp_command read_reg_command = {
 		.cmd = SDP_READ_REG,
 		.addr = BE32(addr),
@@ -251,13 +251,13 @@ int read_memory(struct sdp_dev *dev, unsigned addr, unsigned char *dest, unsigne
 	return err;
 }
 /*
- * write_memory - 写寄存器
+ * write_register - 写寄存器
  *
  * @dev: SDP设备
  * @addr: SDP设备起始地址
  * @val: 目标值
  */
-int write_memory(struct sdp_dev *dev, unsigned addr, unsigned val) {
+int write_register(struct sdp_dev *dev, unsigned addr, unsigned val) {
     struct sdp_command write_reg_command = {
         .cmd = SDP_WRITE_REG,
         .addr = BE32(addr),
@@ -296,7 +296,7 @@ int write_memory(struct sdp_dev *dev, unsigned addr, unsigned val) {
  *
  * @file: 文件
  */
-long get_file_size(FILE *file) {
+static long get_file_size(FILE *file) {
     long tmp = ftell(file);
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
@@ -305,13 +305,13 @@ long get_file_size(FILE *file) {
     return size;
 }
 /*
- * download_file - 下载文件到芯片
+ * write_file - 下载文件到芯片
  *
  * @dev: SDP设备
  * @addr: SDP设备起始地址
  * @file_name: 目标文件名
  */
-int download_file(struct sdp_dev *dev, unsigned addr, const char *file_name) {
+int write_file(struct sdp_dev *dev, unsigned addr, const char *file_name) {
     FILE *file = fopen(file_name, "rb");
     assert(NULL != file);
 
@@ -371,6 +371,73 @@ int download_file(struct sdp_dev *dev, unsigned addr, const char *file_name) {
    
     return 0;
 }
+/*
+ * write_dcd - 下载DCD
+ *
+ * @dev: SDP设备
+ * @addr: SDP设备起始地址
+ * @file_name: 目标文件名
+ */
+int write_dcd(struct sdp_dev *dev, unsigned addr, const char *file_name) {
+    FILE *file = fopen(file_name, "rb");
+    assert(NULL != file);
+
+    unsigned fsize = get_file_size(file);
+    unsigned left = fsize;
+    
+	struct sdp_command dl_command = {
+		.cmd = SDP_WRITE_DCD,
+		.addr = BE32(addr),
+		.format = 0,
+		.cnt = BE32(fsize),
+		.data = 0,
+		.rsvd = 0 
+    };
+
+    int err;
+    int last_trans;
+    char buff[1024];
+    
+    printf("\nloading file '%s'\n", file_name);
+    printf("address: 0x%08x\n", addr);
+
+    for (int i = 0; i < 5; i++) {
+        err = transfer_hid(dev, 1, (char*)&dl_command, sizeof(dl_command), 0, &last_trans);
+        if (!err)
+            break;
+    }
+
+    while (left > 0) {
+        int cnt = fread(buff, 1, min(left, 1024), file);
+
+        for (int i = 0; i < 5; i++) {
+            err = transfer_hid(dev, 2, buff, cnt, 0, &last_trans);
+            if (!err) {
+                left -= last_trans;
+                break;
+            }
+        }
+
+        if (feof(file))
+            break;
+    }
+
+    err = transfer_hid(dev, 3, buff, sizeof(buff), 4, &last_trans);
+    if (err) {
+        printf("w3 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, buff[0], buff[1], buff[2], buff[3]);
+    }
+	err = transfer_hid(dev, 4, buff, sizeof(buff), 4, &last_trans);
+    if (err) {
+        printf("w4 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, buff[0], buff[1], buff[2], buff[3]);
+    }
+    unsigned int *status = (unsigned int*)buff;
+    if (*status == 0x128A8A12UL)
+		printf("succeeded (status 0x%08x)\n", *status);
+    else
+        printf("failed (status 0x%08x)\n", *status);
+   
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
     char *base_path = get_pwd();
@@ -409,14 +476,19 @@ int main(int argc, char *argv[]) {
         goto out;
     }
 
-    download_file(sdp, 0x00907000, "test.bin");
+    write_file(sdp, 0x00907000, "dcd.bin");
 
     unsigned char val[0x40];
-    read_memory(sdp, 0x00907000, val, 0x40);
-    write_memory(sdp, 0x00907000, 1);
+    read_register(sdp, 0x00907000, val, 0x40);
+    write_register(sdp, 0x00907000, 1);
     //printf("========\n");
-    read_memory(sdp, 0x00907000, val, 0x40);
-    
+    read_register(sdp, 0x00907000, val, 0x40);
+
+    printf("========\n");
+    write_dcd(sdp, 0x00907000, "dcd.bin");
+    printf("========\n");
+    write_register(sdp, 0x10000000, 1);
+    read_register(sdp, 0x10000000, val, 0x40);
 
     
     libusb_release_interface(h, 0);

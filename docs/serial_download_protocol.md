@@ -113,7 +113,7 @@ DCD_WRITE指令提供了一种批量配置芯片寄存器的功能.其通信过�
 
 最后, 若完成则报告一个完成(0x128A8A12)的状态, 若失败报告HAB错误状态(HAB error status).
 
-* [设备配置数据, Device Configuration Data, DCD](docs/system_boot.md)
+* [设备配置数据, Device Configuration Data, DCD](docs/device_configuration_data.md)
 
 ## JUMP_ADDRESS (0x0B0B)
 

@@ -20,16 +20,17 @@
 include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(BOARD).a
+DCD = $(obj)dcd.bin
 
-COBJS	:= $(BOARD).o
-SOBJS	:= lowlevel_init.o flash_header.o
+all: $(LIB) $(DCD)
+	cp $(DCD) $(TOPDIR)
 
-SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS))
-SOBJS	:= $(addprefix $(obj),$(SOBJS))
+$(LIB): $(obj).depend $(COBJS) $(SOBJS)
+	$(AR) $(ARFLAGS) $@ $(COBJS) $(SOBJS)
 
-$(LIB): flash_header.s $(obj).depend $(OBJS) $(SOBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
+$(DCD): dcd.o dcd.s
+	mv dcd.s $(TOPDIR)
+	$(OBJCOPY) -O binary $< $@
 
 clean:
 	rm -f $(SOBJS) $(OBJS)
