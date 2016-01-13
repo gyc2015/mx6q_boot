@@ -33,7 +33,7 @@ Serial Downloader提供了一种通过USB接口下载镜像到芯片的功能.�
 ROM设置将配置WDOG1的超时阈值为90秒,并不断地查询USB链接情况. 若在USB OTG1上没有检测到链接并且看门狗
 溢出,芯片将重启. 需要注意的是,下载的镜像必须持续地喂狗.
 
-* [串行下载协议(Serial Download Protocol, SDP)](docs/serial_download_protocol.md)
+* [串行下载协议(Serial Download Protocol, SDP)](/docs/serial_download_protocol.md)
 
 USB的VID/PID和Strings如下:
 

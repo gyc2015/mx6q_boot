@@ -4,8 +4,8 @@
 i.MX6Q提供了一种设备配置数据(Device Configuration Data, DCD),可以批量的修改芯片各种外设的寄存器,
 进而提高系统启动速度.	
 
-一般设备启动时,需要在镜像文件中的特定位置写有DCD数据,参见[镜像文件构成](docs/system_boot.md);
-通过[USB OTG提供的serial downloader启动时](docs/serial_download_protocol.md),可以用DCD_WRITE指令直接写入芯片.
+一般设备启动时,需要在镜像文件中的特定位置写有DCD数据,参见[镜像文件构成](/docs/system_boot.md);
+通过[USB OTG提供的serial downloader启动时](/docs/serial_download_protocol.md),可以用DCD_WRITE指令直接写入芯片.
 DCD只支持对如下设备的配置:
 
 |   Address range   |  Start address  |  Last Address  |
