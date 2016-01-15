@@ -68,3 +68,20 @@ signal processing (DSP).
 * T, bit[5] Thumb执行状态位. 和J一起决定了指令集状态.
 
 10. M[4:0], bits[4:0]. 该位决定了当前处理器的状态.
+
+## ARM处理器模式
+
+| Processor mode | CPSR.M[4:0] | 优先级 | Implemented                   | Security state  | 描述 |
+|:--------------:|:-----------:|:-----:|:------------------------------:|:---------------:|:-----|
+| User           | 10000       | PL0   | Always                         | Both            | 一般, 应用程序是工作在User mode下的. 在User mode下, CPU工作在PL0级, 不能访问受保护的系统资源. 在该模式下, 也不能够修改系统的工作模式. 若想要跳出User模式需要通过异常(exception)机制来实现. |
+| FIQ            | 10001       | PL1   | Always                         | Both            | 是FIQ中断的默认模式. |
+| IRQ            | 10010       | PL1   | Always                         | Both            | 是IRQ中断的默认模式. |
+| Supervisor     | 10011       | PL1   | Always                         | Both            | Supervisor模式是SVC(Supervisor Call)异常的默认工作模式. 运行一个SVC指令, 将产生一个Supervisor Call异常. 系统复位后的就是工作在这种模式下的. |
+| Monitor        | 10110       | PL1   | With Security Extensions       | Secure only     | 是Secure Monitor Call异常的工作模式 |
+| Abort          | 10111       | PL1   | Always                         | Both            | 当Data Abort异常和Prefetch Abort异常出现时, 系统的默认工作模式. |
+| Hyp            | 11010       | PL2   | With Virtualization Extensions | Non-secure only | 是Non-Secure的PL2模式. 是Virtualization异常的一部分. 具体不知道. |
+| Undefined      | 11011       | PL1   | Always                         | Both            | 是任何指令相关异常的默认模式, 也是UNDEFINED指令的默认模式. |
+| System         | 11111       | PL1   | Always                         | Both            | 在System模式下, 软件工作在PL1级, System模式具有和User模式相同的对寄存器的访问权限, 但是不能够通过任何异常进入. |
+
+![image](/docs/images/processor_modes.png)
+
