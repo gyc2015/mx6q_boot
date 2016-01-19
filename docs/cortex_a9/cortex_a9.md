@@ -18,6 +18,9 @@ LR是一个保存返回链接信息的特殊寄存器. 不需要时, 该寄存�
 在ARM指令集中, PC中的值为当前指令地址加8; 在Thumb指令集中, PC中的值为当前指令地址加4; 直接向PC中写入一个地址将导致
 程序跳转到相应的地址. 大部分的Thumb指令是不能访问PC的.
 
+* Low registers, (R0-R7):
+因为大部分16位的Thumb指令只能访问前8个内核寄存器, 故, 称之为Low Registers. 而R8-R15则被成为High Registers.
+
 ## Program Status Register, 程序状态寄存器
 
 程序状态寄存器涉及到三个寄存器: CPSR(Current Program Status Register), SPSRs(Saved Program Status Registers)和
@@ -83,5 +86,5 @@ signal processing (DSP).
 | Undefined      | 11011       | PL1   | Always                         | Both            | 是任何指令相关异常的默认模式, 也是UNDEFINED指令的默认模式. |
 | System         | 11111       | PL1   | Always                         | Both            | 在System模式下, 软件工作在PL1级, System模式具有和User模式相同的对寄存器的访问权限, 但是不能够通过任何异常进入. |
 
-![image](/docs/images/processor_modes.png)
+![Modes, privilege levels, and security states](/home/gyc/Development/imx/uboot-art/docs/images/processor_modes.png)
 
