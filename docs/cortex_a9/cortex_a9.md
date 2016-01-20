@@ -21,12 +21,18 @@ LR是一个保存返回链接信息的特殊寄存器. 不需要时, 该寄存�
 * Low registers, (R0-R7):
 因为大部分16位的Thumb指令只能访问前8个内核寄存器, 故, 称之为Low Registers. 而R8-R15则被成为High Registers.
 
+虽然软件可以在不同的工作模式下访问这些寄存器, 但有些工作模式下这些寄存器可能有不同的物理存储, 这样的现象被称为Banking,
+下图中显示了不同模式下寄存器的物理意义. 在所有的模式下, Low registers和PC都有相同的物理存储. 而High registers在不同的
+模式下有可能不同, 如在FIQ模式下的R8-R12.
+
+![ARM core registers](/docs/images/ARM_Register_Set.png)
+
 ## Program Status Register, 程序状态寄存器
 
 程序状态寄存器涉及到三个寄存器: CPSR(Current Program Status Register), SPSRs(Saved Program Status Registers)和
 APSR(Application Program Status Register).
 
-APSR是CPSR的一个子集, 通过APSR可以访问到CPSR的一些状态位. SPSRs则是用来保存先前的CPSR寄存器的值, 主要是为了异常处理
+在User模式下, 只能访问到CPSR的部分状态位, 此时的状态寄存器也被称为APSR. SPSRs则是用来保存先前的CPSR寄存器的值, 主要是为了异常处理
 提供必要的信息的. 通过指令MRS可以把状态寄存器中的值读到一个内核寄存器中, MSR可以把一个内核寄存器或者立即数写到状态寄存器中.
 通过指令CPS指令可以修改CPSR.M字段和CPSR.{A,I,F}字段.CPSR记录了处理器的状态和控制信息, 其位定义如下:
 
@@ -74,17 +80,24 @@ signal processing (DSP).
 
 ## ARM处理器模式
 
+在ARMv6之前处理器只有7种模式, 其中6种为Privileged, 只有User模式是Unprivileged. 引入TurstZone安全扩展(Security Extensions)后, 带来了Security的状态,
+同时引入了一个Monitor的处理器模式, 该模式是Secure和Non-secure状态之间切换的gateway. ARMv7-A架构的Virtualization Extensions增加了一个Hypervisor模式.
+而Virtualization允许在同一个平台上运行多个操作系统.
+
+![Secure and Non-secure Worlds](/docs/images/secure_and_non_secure_worlds.png)
+![Hypervisor](/docs/images/hypervisor_mode.png)
+
 | Processor mode | CPSR.M[4:0] | 优先级 | Implemented                   | Security state  | 描述 |
 |:--------------:|:-----------:|:-----:|:------------------------------:|:---------------:|:-----|
-| User           | 10000       | PL0   | Always                         | Both            | 一般, 应用程序是工作在User mode下的. 在User mode下, CPU工作在PL0级, 不能访问受保护的系统资源. 在该模式下, 也不能够修改系统的工作模式. 若想要跳出User模式需要通过异常(exception)机制来实现. |
+| User(USR)      | 10000       | PL0   | Always                         | Both            | 一般, 应用程序是工作在User mode下的. 在User mode下, CPU工作在PL0级, 不能访问受保护的系统资源. 在该模式下, 也不能够修改系统的工作模式. 若想要跳出User模式需要通过异常(exception)机制来实现. |
 | FIQ            | 10001       | PL1   | Always                         | Both            | 是FIQ中断的默认模式. |
 | IRQ            | 10010       | PL1   | Always                         | Both            | 是IRQ中断的默认模式. |
-| Supervisor     | 10011       | PL1   | Always                         | Both            | Supervisor模式是SVC(Supervisor Call)异常的默认工作模式. 运行一个SVC指令, 将产生一个Supervisor Call异常. 系统复位后的就是工作在这种模式下的. |
-| Monitor        | 10110       | PL1   | With Security Extensions       | Secure only     | 是Secure Monitor Call异常的工作模式 |
-| Abort          | 10111       | PL1   | Always                         | Both            | 当Data Abort异常和Prefetch Abort异常出现时, 系统的默认工作模式. |
+| Supervisor(SVC)| 10011       | PL1   | Always                         | Both            | Supervisor模式是SVC(Supervisor Call)异常的默认工作模式. 运行一个SVC指令, 将产生一个Supervisor Call异常. 系统复位后的就是工作在这种模式下的. |
+| Monitor(MON)   | 10110       | PL1   | With Security Extensions       | Secure only     | 是Secure Monitor Call异常的工作模式 |
+| Abort(ABT)     | 10111       | PL1   | Always                         | Both            | 当Data Abort异常和Prefetch Abort异常出现时, 系统的默认工作模式. |
 | Hyp            | 11010       | PL2   | With Virtualization Extensions | Non-secure only | 是Non-Secure的PL2模式. 是Virtualization异常的一部分. 具体不知道. |
-| Undefined      | 11011       | PL1   | Always                         | Both            | 是任何指令相关异常的默认模式, 也是UNDEFINED指令的默认模式. |
-| System         | 11111       | PL1   | Always                         | Both            | 在System模式下, 软件工作在PL1级, System模式具有和User模式相同的对寄存器的访问权限, 但是不能够通过任何异常进入. |
+| Undefined(UND) | 11011       | PL1   | Always                         | Both            | 是任何指令相关异常的默认模式, 也是UNDEFINED指令的默认模式. |
+| System(SYS)    | 11111       | PL1   | Always                         | Both            | 在System模式下, 软件工作在PL1级, System模式具有和User模式相同的对寄存器的访问权限, 但是不能够通过任何异常进入. |
 
 ![Modes, privilege levels, and security states](/docs/images/processor_modes.png)
 

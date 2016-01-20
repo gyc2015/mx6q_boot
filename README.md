@@ -2,6 +2,8 @@
 
 * 关于板子的配置写在include/config.h中，前缀 CONFIG_
 
+约定一个word为32位, 一个doubleword为64位, 一个halfword为16位, 一个byte为8位
+
 ---
 
 * [i.MX6Q系统的启动过程](/docs/system_boot.md)
