@@ -86,5 +86,20 @@ signal processing (DSP).
 | Undefined      | 11011       | PL1   | Always                         | Both            | 是任何指令相关异常的默认模式, 也是UNDEFINED指令的默认模式. |
 | System         | 11111       | PL1   | Always                         | Both            | 在System模式下, 软件工作在PL1级, System模式具有和User模式相同的对寄存器的访问权限, 但是不能够通过任何异常进入. |
 
-![Modes, privilege levels, and security states](/home/gyc/Development/imx/uboot-art/docs/images/processor_modes.png)
+![Modes, privilege levels, and security states](/docs/images/processor_modes.png)
 
+## 优先级 Privilege level
+
+在安全状态(secure state)下, 有两个优先级:
+
+* PL0 在用户模式(User mode)下运行的软件具有PL0优先级
+* PL1 除了用户模式之外的处理器模式具有PL1优先级
+
+在非安全状态(non-secure state)下, 有三个优先级:
+
+* PL0 User mode下运行的软件
+* PL1 除了User和Hyp模式下的软件
+* PL2 在由Virtualization Extensions的处理器上, 工作下Hyp模式下的软件具有PL2优先级.
+
+在PL0下, 软件不能访问处理器的很多资源, 特别是一些用于配置系统的资源, 它们只能访问一些unprivileged的内存. 在PL1下, 软件可以访问除Virtualization Extension添加的功能外的所有资源.
+PL2下的软件可以访问所有的系统资源.

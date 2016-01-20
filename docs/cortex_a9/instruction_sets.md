@@ -52,8 +52,6 @@ RSC, SBC或者SUB指令进入Thumb状态, 这需要以PC作为指令的目标寄
 对于Thumb指令集, 若条件不是AL, 通常编码为IT指令, 也有一些不需要IT指令的.
 
 
-
-
 ---
 
 * ARM推荐使用BX LR从一个程序中返回, 避免使用MOV PC, LR.
