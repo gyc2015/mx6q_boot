@@ -21,3 +21,5 @@ i.MX6Quad是Freescale公司提供的一款Cortex-A9内核的4核ARM芯片.
 ## 计算机体系结构
 
 * [Caches](/docs/arch/caches.md)
+* [Memory Management Unit, MMU](/docs/arch/mmu.md)
+

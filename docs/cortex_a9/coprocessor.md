@@ -35,3 +35,5 @@ opcode_1和opcode_2为操作码. CRn, CRm, opcode_1和opcode_2一起决定了协
 访问该协处理器的寄存器.
 * [ARMv7-A Architecture Reference Manual](/docs/manuals/ARMv7_A_architecture_reference_manual.pdf)的B4节描述了各个寄存
 器的位定义和功能.
+
+## Invalidating and cleaning cache memory
