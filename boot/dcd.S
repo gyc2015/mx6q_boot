@@ -1,5 +1,5 @@
 #include <config.h>
-#include <asm/arch/mx6.h>
+#include <mx6.h>
 
 #define CPU_2_BE_32(l) \
        ((((l) & 0x000000FF) << 24) | \

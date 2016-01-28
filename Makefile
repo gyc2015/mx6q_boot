@@ -35,25 +35,44 @@ export ARCH CPU BOARD VENDER SOC
 
 include $(TOPDIR)/config.mk
 
-LIBBOARD = board/$(BOARDDIR)/lib$(BOARD).a
-LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
+BOOT_START = boot/start.o
+BOOT_START := $(addprefix $(obj),$(BOOT_START))
 
+BOOT_DCD = boot/dcd.bin
+BOOT_DCD := $(addprefix $(obj),$(BOOT_DCD))
 
-all: $(LIBBOARD)
-	echo "LIBBOARD =" ${LIBBOARD}
+TARGET = imx6q
 
-$(LIBBOARD):depend
+OBJS += $(BOOT_START) $(BOOT_DCD)
+
+LIBS += board/lib$(BOARD).a
+
+all: $(TARGET)
+	echo "BOOT_START =" ${BOOT_START}
+	echo "LDFLAGS =" ${LDFLAGS}
+
+$(TARGET): $(OBJS) $(LIBS) $(LDSCRIPT)
+	$(LD) $(LDFLAGS) $(BOOT_START) --start-group $(LIBS) --end-group -Map imx6q.map -o $@
+
+$(LDSCRIPT): omni.lds
+	$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ > $@
+
+$(LIBS):depend
+	$(MAKE) -C $(dir $(subst $(obj),,$@))
+
+$(OBJS):depend
 	$(MAKE) -C $(dir $(subst $(obj),,$@))
 
 depend:
 
 clean:
 	@find $(OBJTREE) -type f \
-		\( -name 'core' -o -name '*.bak' -o -name '*~' \
+		\( -name 'core' -o -name '*.bak' -o -name '*~' -o -name '*.map' \
 		-o -name '*.o'	-o -name '*.a' -o -name '*.exe' -o -name '*.s'	\) -print \
 		| xargs rm -f
 	@find $(OBJTREE) -type f \( -name .depend \
 		-o -name '*.srec' -o -name '*.bin' -o -name usb_downloader \) \
 		-print0 \
 		| xargs -0 rm -f
+	@rm $(TARGET) $(LDSCRIPT)
 

@@ -82,22 +82,66 @@ RANLIB	= $(CROSS_COMPILE)RANLIB
 # Load generated board configuration
 #sinclude $(OBJTREE)/include/autoconf.mk
 
-ifdef ARCH
-sinclude $(TOPDIR)/arch/$(ARCH)/config.mk	# include architecture dependend rules
+CROSS_COMPILE ?= arm-linux-
+
+PLATFORM_CPPFLAGS += -DCONFIG_ARM -D__ARM__
+
+# Explicitly specifiy 32-bit ARM ISA since toolchain default can be -mthumb:
+PLATFORM_CPPFLAGS += $(call cc-option,-marm,)
+
+# Try if EABI is supported, else fall back to old API,
+# i. e. for example:
+# - with ELDK 4.2 (EABI supported), use:
+#	-mabi=aapcs-linux -mno-thumb-interwork
+# - with ELDK 4.1 (gcc 4.x, no EABI), use:
+#	-mabi=apcs-gnu -mno-thumb-interwork
+# - with ELDK 3.1 (gcc 3.x), use:
+#	-mapcs-32 -mno-thumb-interwork
+PLATFORM_CPPFLAGS += $(call cc-option,\
+				-mabi=aapcs-linux -mno-thumb-interwork,\
+				$(call cc-option,\
+					-mapcs-32,\
+					$(call cc-option,\
+						-mabi=apcs-gnu,\
+					)\
+				) $(call cc-option,-mno-thumb-interwork,)\
+			)
+
+# For EABI, make sure to provide raise()
+ifneq (,$(findstring -mabi=aapcs-linux,$(PLATFORM_CPPFLAGS)))
+# This file is parsed several times; make sure to add only once.
+ifeq (,$(findstring lib_arm/eabi_compat.o,$(PLATFORM_LIBS)))
+PLATFORM_LIBS += $(OBJTREE)/${ARCH}/eabi_compat.o
 endif
-ifdef CPU
-sinclude $(TOPDIR)/cpu/$(CPU)/config.mk		# include  CPU	specific rules
 endif
-ifdef SOC
-sinclude $(TOPDIR)/cpu/$(CPU)/$(SOC)/config.mk	# include  SoC	specific rules
-endif
-ifdef VENDOR
-BOARDDIR = $(VENDOR)/$(BOARD)
-else
-BOARDDIR = $(BOARD)
-endif
-ifdef BOARD
-sinclude $(TOPDIR)/board/$(BOARDDIR)/config.mk	# include board specific rules
+
+
+PLATFORM_RELFLAGS += -fno-strict-aliasing -fno-common -ffixed-r8 \
+		     -msoft-float
+
+# Make ARMv5 to allow more compilers to work, even though its v7a.
+PLATFORM_CPPFLAGS += -march=armv5
+# =========================================================================
+#
+# Supply options according to compiler version
+#
+# =========================================================================
+#ifdef CONFIG_SYS_APCS_GNU
+#PLATFORM_CPPFLAGS +=$(call cc-option,-mapcs-32,-mabi=apcs-gnu)
+#else
+#PLATFORM_CPPFLAGS +=$(call cc-option)
+#endif
+#PLATFORM_CPPFLAGS +=$(call cc-option,-mno-thumb-interwork,\
+#		    $(call cc-option,-mshort-load-bytes,\
+#		    $(call cc-option,-malignment-traps,)))
+
+PLATFORM_CPPFLAGS +=$(call cc-option,-mshort-load-bytes,\
+		    $(call cc-option,-malignment-traps,))
+
+LDSCRIPT := $(SRCTREE)/imx6q.lds
+
+ifndef TEXT_BASE
+	TEXT_BASE = 0x27800000
 endif
 
 #########################################################################
@@ -110,7 +154,6 @@ endif
 RELFLAGS= $(PLATFORM_RELFLAGS)
 DBGFLAGS= -g # -DDEBUG
 OPTFLAGS= -Os #-fomit-frame-pointer
-LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds
 OBJCFLAGS += --gap-fill=0xff
 
 gccincdir := $(shell $(CC) -print-file-name=include)
@@ -165,7 +208,7 @@ endif
 
 AFLAGS := $(AFLAGS_DEBUG) -D__ASSEMBLY__ $(CPPFLAGS)
 
-LDFLAGS += -Bstatic -T $(obj)u-boot.lds $(PLATFORM_LDFLAGS)
+LDFLAGS += -Bstatic -T $(obj)imx6q.lds $(PLATFORM_LDFLAGS)
 ifneq ($(TEXT_BASE),)
 LDFLAGS += -Ttext $(TEXT_BASE)
 endif
