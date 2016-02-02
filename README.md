@@ -14,6 +14,7 @@
 
 i.MX6Quad是Freescale公司提供的一款Cortex-A9内核的4核ARM芯片.
 
+* [i.MX6Q的芯片特性](/docs/features.md)
 * [i.MX6Q系统的启动过程](/docs/system_boot.md)
 * [i.MX6Q引脚功能的配置](/docs/iomux.md)
 * [i.MX6Q的DDR3配置](/docs/mmdc.md)

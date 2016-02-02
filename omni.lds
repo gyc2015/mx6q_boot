@@ -9,6 +9,7 @@ SECTIONS
  	.text :
  	{
 		boot/start.o
+	 	*(.text)
  	}
 
 	. = ALIGN(4);
