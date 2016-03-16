@@ -13,7 +13,8 @@
 	 * Set all MPROTx to be non-bufferable, trusted for R/W,
 	 * not forced to user-mode.
 	 */
-	ldr r0, =AIPS1_ON_BASE_ADDR
+	// ldr r0, =AIPS1_ON_BASE_ADDR
+	ldr r0, =0x77777777
 	ldr r1, =0x77777777
 	str r1, [r0, #0x0]
 	str r1, [r0, #0x4]
@@ -24,7 +25,8 @@
 	str r1, [r0, #0x4C]
 	str r1, [r0, #0x50]
 
-	ldr r0, =AIPS2_ON_BASE_ADDR
+	// ldr r0, =AIPS2_ON_BASE_ADDR
+	ldr r0, =0x77777777
 	ldr r1, =0x77777777
 	str r1, [r0, #0x0]
 	str r1, [r0, #0x4]

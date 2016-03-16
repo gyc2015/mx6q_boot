@@ -1,7 +1,12 @@
 #include <usb_downloader.h>
-
 #include <conf_parser.h>
 
+/*
+ * find_imx_device - 查询imx设备
+ *
+ * @conf: 设备配置信息
+ * @phandle: 输出句柄
+ */
 int find_imx_device(const struct sdp_dev *conf, libusb_device_handle **phandle) {
     libusb_device **devs;
     libusb_device *dev = NULL;
@@ -86,9 +91,9 @@ void dump_bytes(unsigned char *src, unsigned cnt, unsigned addr) {
  * transfer_hid - hid发送器
  *
  * @dev: SDP 设备
- * @report: hid report
+ * @report: hid report ID, HID报文类型
  * @p: 缓存的指针
- * @size: 缓存大小
+ * @cnt: 缓存大小
  * @expected: 预期的数据(UART)
  * @last_trans: 实际传送的字节数
  */
