@@ -1,0 +1,10 @@
+finding 'usb.conf' in '/home/gyc/Development/imx/uboot-art/tools/usb_downloader'
+report 1, wrote 16 bytes, err=0
+libusb_interrupt_transfer, err=0, trans=5
+report 3, read 4 bytes, err=0
+read=56 78 78 56
+libusb_interrupt_transfer, err=0, trans=65
+report 4, read 64 bytes, err=0
+read=33 33 33 33
+libusb_interrupt_transfer, err=-7, trans=0
+libusb_interrupt_transfer, err=-7, trans=0

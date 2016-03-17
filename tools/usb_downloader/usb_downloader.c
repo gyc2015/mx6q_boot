@@ -1,5 +1,8 @@
 #include <usb_downloader.h>
 #include <conf_parser.h>
+#include <elf_parser.h>
+
+#include <utils.h>
 
 /*
  * find_imx_device - 查询imx设备
@@ -59,34 +62,6 @@ int find_imx_device(const struct sdp_dev *conf, libusb_device_handle **phandle) 
 
 #define EP_IN	0x80
 
-
-void dump_bytes(unsigned char *src, unsigned cnt, unsigned addr) {
-	unsigned char *p = src;
-	int i;
-	while (cnt >= 16) {
-		printf("%08x: %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x  %02x %02x %02x %02x\n", addr,
-				p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
-		p += 16;
-		cnt -= 16;
-		addr += 16;
-	}
-	if (cnt) {
-		printf("%08x:", addr);
-		i = 0;
-		while (cnt) {
-			printf(" %02x", p[0]);
-			p++;
-			cnt--;
-			i++;
-			if (cnt) if (i == 4) {
-				i = 0;
-				printf(" ");
-			}
-		}
-		printf("\n");
-	}
-}
-
 /*
  * transfer_hid - hid发送器
  *
@@ -144,7 +119,7 @@ int transfer_hid(struct sdp_dev *dev, int report, unsigned char *p, unsigned int
 #ifdef DEBUG
     if (report >= 3) {
         printf("---------------------------------------------\n");
-		dump_bytes(p, cnt, 0);
+		dump_bytes(p, expected, 0);
         printf("---------------------------------------------\n");
     }
 #endif
@@ -297,19 +272,6 @@ int write_register(struct sdp_dev *dev, unsigned addr, unsigned val) {
     return err;
 }
 /*
- * get_file_size - 获取文件大小
- *
- * @file: 文件
- */
-static long get_file_size(FILE *file) {
-    long tmp = ftell(file);
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fseek(file, tmp, SEEK_SET);
-    tmp = ftell(file);
-    return size;
-}
-/*
  * write_file - 下载文件到芯片
  *
  * @dev: SDP设备
@@ -444,12 +406,123 @@ int write_dcd(struct sdp_dev *dev, unsigned addr, const char *file_name) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
-    char *base_path = get_pwd();
-    char *conf_file = get_conf_file("usb.conf", base_path);
+/*
+ * write_img - 下载镜像
+ *
+ * @dev: SDP设备
+ * @img: 内核镜像
+ */
+int write_img(struct sdp_dev *dev, const struct elf_img *img) {
+    assert(NULL != dev && NULL != img);
 
-    assert(NULL != conf_file);
-    struct sdp_dev *sdp = parse_conf_file(conf_file);
+    unsigned fsize = img->pheader[0].p_filesz;
+    unsigned left = fsize;
+    unsigned addr = img->pheader[0].p_vaddr;
+
+	struct sdp_command dl_command = {
+		.cmd = SDP_WRITE_FILE,
+		.addr = BE32(addr),
+		.format = 0,
+		.cnt = BE32(fsize),
+		.data = 0,
+		.rsvd = 0 
+    };
+
+    int err;
+    int last_trans;
+    char buff[1024];
+
+    printf("\nloading file '%s'\n", img->fname);
+    printf("address: 0x%08x\n", addr);
+
+    for (int i = 0; i < 5; i++) {
+        err = transfer_hid(dev, 1, (char*)&dl_command, sizeof(dl_command), 0, &last_trans);
+        if (!err)
+            break;
+    }
+
+    unsigned start = 0;
+    while (left > 0) {
+        int cnt =  load_text(buff, start, min(left, 1024), img);
+        
+        for (int i = 0; i < 5; i++) {
+            err = transfer_hid(dev, 2, buff, cnt, 0, &last_trans);
+            if (!err) {
+                left -= last_trans;
+                start += last_trans;
+                break;
+            }
+        }
+    }
+
+    err = transfer_hid(dev, 3, buff, sizeof(buff), 4, &last_trans);
+    if (err) {
+        printf("w3 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, buff[0], buff[1], buff[2], buff[3]);
+    }
+	err = transfer_hid(dev, 4, buff, sizeof(buff), 4, &last_trans);
+    if (err) {
+        printf("w4 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, buff[0], buff[1], buff[2], buff[3]);
+    }
+    unsigned int *status = (unsigned int*)buff;
+    if (*status == 0x88888888UL)
+		printf("succeeded (status 0x%08x)\n", *status);
+    else
+        printf("failed (status 0x%08x)\n", *status);
+   
+    return 0;
+}
+
+int jump_to_img(struct sdp_dev *dev, const struct elf_img *img) {
+    assert(NULL != dev && NULL != img);
+
+    unsigned addr = img->pheader[0].p_vaddr;
+	struct sdp_command dl_command = {
+		.cmd = SDP_JUMP_ADDRESS,
+		.addr = BE32(addr),
+		.format = 0,
+		.cnt = 0,
+		.data = 0,
+		.rsvd = 0 
+    };
+	
+    int err, rem;
+    unsigned char tmp[64];
+    int last_trans;
+
+    for (int i = 0; i < 5; i++) {
+        err = transfer_hid(dev, 1, (char*)&dl_command, sizeof(dl_command), 0, &last_trans);
+        if (!err)
+            break;
+    }
+
+    memset(tmp, 0, sizeof(tmp));
+    err = transfer_hid(dev, 3, tmp, 4, 4, &last_trans);
+    if (err) {
+        printf("w3 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, tmp[0], tmp[1], tmp[2], tmp[3]);
+		printf("addr=0x%08x\n", addr);
+        return err;
+    }
+	err = transfer_hid(dev, 4, tmp, sizeof(tmp), 4, &last_trans);
+    if (err) {
+        printf("w4 in err=%i, last_trans=%i  %02x %02x %02x %02x\n", err, last_trans, tmp[0], tmp[1], tmp[2], tmp[3]);
+		printf("addr=0x%08x\n", addr);
+    }
+    return err;
+
+}
+
+int main(int argc, char *argv[]) {
+    assert(3 == argc);
+
+    char *base_path = get_pwd();
+    char *dcd_fname = argv[1];
+    char *elf_fname = argv[2];
+    char *conf_fname = get_conf_file("usb.conf", base_path);
+
+    assert(NULL != conf_fname);
+    struct sdp_dev *sdp = parse_conf_file(conf_fname);
+    struct elf_img *img = load_elf_img(elf_fname);
+    assert(NULL != sdp && NULL != img);
 
     libusb_init(NULL);
     libusb_device_handle *h = NULL;
@@ -481,20 +554,9 @@ int main(int argc, char *argv[]) {
         goto out;
     }
 
-    write_file(sdp, 0x00907000, "dcd.bin");
-
-    unsigned char val[0x40];
-    read_register(sdp, 0x00907000, val, 0x40);
-    write_register(sdp, 0x00907000, 1);
-    //printf("========\n");
-    read_register(sdp, 0x00907000, val, 0x40);
-
-    printf("========\n");
-    write_dcd(sdp, 0x00907000, "dcd.bin");
-    printf("========\n");
-    write_register(sdp, 0x10000000, 1);
-    read_register(sdp, 0x10000000, val, 0x40);
-
+    write_dcd(sdp, 0x00907000, dcd_fname);
+    write_img(sdp, img);
+    jump_to_img(sdp, img);
     
     libusb_release_interface(h, 0);
 
@@ -502,7 +564,7 @@ int main(int argc, char *argv[]) {
     if (h)
         libusb_close(h);
     libusb_exit(NULL);
-    free(conf_file);
+    free(conf_fname);
     free(base_path);
     return 0;
 }

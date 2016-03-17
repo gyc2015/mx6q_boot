@@ -14,7 +14,7 @@ ROM用USB OTG端口作为boot的下载端口.其余的USB端口都不能作此�
 |:---------------------:|-------------------|----------------|--------------|------------------|
 | 1                     | control OUT       | Host to device | 17字节       | SDP指令          |
 | 2                     | control OUT       | Host to device | 至多1025字节 | SDP指令的数据部分 |
-| 3                     | interrupt         | Device to host | 5字节        | HAB安全设置. Closed mode: 0x12343412; Open mode: 0x56787856 |
+| 3                     | interrupt         | Device to host | 5字节        | HAB安全设置.<br>Closed mode: 0x12343412;<br>Open mode: 0x56787856 |
 | 4                     | interrupt         | Device to host | 至多65字节   | SDP指令响应       |
 
 host通过HID Report 1向设备发送16字节的SDP命令,支持6种命令:
