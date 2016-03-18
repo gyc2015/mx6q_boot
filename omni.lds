@@ -8,6 +8,7 @@ SECTIONS
  	. = ALIGN(4);
  	.text :
  	{
+		boot/flash_header.o
 		boot/start.o
 	 	*(.text)
  	}
@@ -21,4 +22,5 @@ SECTIONS
 	. = ALIGN(4);
 	.got : { *(.got) }
 
+	_end_of_copy = .;
 }

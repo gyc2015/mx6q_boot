@@ -25,7 +25,14 @@ reset:
 		orr	r0, r0, #0xd3
 		msr	cpsr,r0
 
+        ldr r0, =IOMUXC_BASE_ADDR
+		ldr r1, =0x00000005
+		str r1, [r0, #0x234]
+        
 		ldr r0, =GPIO1_BASE_ADDR
+		ldr r1, =0x00000004
+        str r1, [r0, #0x4]
+
 		ldr r1, =0x00000004
 		str r1, [r0, #0x0]
 

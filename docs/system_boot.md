@@ -29,6 +29,7 @@ i.MX6Q支持的boot设备：
 
 ## Serial Downloader, Boot_MODE=10
 
+通过该模式启动时, 镜像的IVT偏移量为0.<br>
 Serial Downloader提供了一种通过USB接口下载镜像到芯片的功能.在这种模式下,若WDOG_ENABLE的eFuse被置1,
 ROM设置将配置WDOG1的超时阈值为90秒,并不断地查询USB链接情况. 若在USB OTG1上没有检测到链接并且看门狗
 溢出,芯片将重启. 需要注意的是,下载的镜像必须持续地喂狗.

@@ -141,7 +141,7 @@ PLATFORM_CPPFLAGS +=$(call cc-option,-mshort-load-bytes,\
 LDSCRIPT := $(SRCTREE)/imx6q.lds
 
 ifndef TEXT_BASE
-	TEXT_BASE = 0x10000000
+	TEXT_BASE = 0x27800000
 endif
 
 #########################################################################

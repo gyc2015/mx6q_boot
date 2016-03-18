@@ -1,6 +1,10 @@
 #include <config.h>
 #include <mx6.h>
 
+#ifndef CONFIG_FLASH_HEADER_OFFSET
+# error "Must define the offset of flash header"
+#endif
+
 #define CPU_2_BE_32(l) \
        ((((l) & 0x000000FF) << 24) | \
 	(((l) & 0x0000FF00) << 8)  | \
@@ -10,6 +14,20 @@
 #define MXC_DCD_ITEM(addr, val)   \
         .word CPU_2_BE_32(addr) ;     \
         .word CPU_2_BE_32(val)  ;     \
+
+.section ".text.flasheader", "x"
+ivt_header:       .word 0x402000D1 /* Tag=0xD1, Len=0x0020, Ver=0x40 */
+app_code_jump_v:  .word _start
+reserv1:          .word 0x0
+dcd_ptr:          .word dcd_hdr
+boot_data_ptr:	  .word boot_data
+self_ptr:         .word ivt_header
+app_code_csf:     .word 0
+reserv2:          .word 0x0
+
+boot_data:        .word TEXT_BASE
+image_len:        .word _end_of_copy  - TEXT_BASE + CONFIG_FLASH_HEADER_OFFSET
+plugin:           .word 0x0
 
 
 /*************************************************/
